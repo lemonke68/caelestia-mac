@@ -1,0 +1,117 @@
+# Ported from dotfiles-hyprlain (caelestia variables.lua + hypr-vars.lua + hypr-user.lua).
+# SUPER -> alt, SUPER + ALT -> alt + cmd.
+# Letters use raw keycodes so binds keep working while the Russian layout is active:
+#   a 0x00  s 0x01  d 0x02  f 0x03  h 0x04  z 0x06  x 0x07  c 0x08  v 0x09  b 0x0B
+#   q 0x0C  w 0x0D  e 0x0E  r 0x0F  t 0x11  o 0x1F  u 0x20  i 0x22  p 0x23
+#   l 0x25  j 0x26  k 0x28  n 0x2D  m 0x2E
+#   - 0x1B  = 0x18  \ 0x2A  . 0x2F  ` 0x32 (ISO: § 0x0A)
+
+# ---------- Apps ----------
+alt - return        : open -na kitty                                  # terminal
+alt - 0x0D          : open -a Zen                                     # W  browser
+alt - 0x11          : open -a Zed                                     # T  editor
+alt - 0x0E          : open ~                                          # E  files
+
+# ---------- Windows ----------
+alt - 0x0C          : yabai -m window --close                         # Q
+shift + alt - 0x0C  : osascript -e "quit app \"$(yabai -m query --windows --window | jq -r .app)\""   # shift Q  quit app
+alt - 0x03          : ~/.config/yabai/fullscreen.sh                   # F  fullscreen in place (Hyprland)
+cmd + alt - 0x03    : yabai -m window --toggle native-fullscreen      # alt F  real fullscreen
+alt - 0x09          : yabai -m window --toggle float --grid 6:6:1:1:4:4   # V  float
+alt - 0x23          : yabai -m window --toggle sticky                 # P  pin
+ctrl + alt - 0x2A   : yabai -m window --grid 6:6:1:1:4:4              # ctrl \  center
+alt - 0x2D          : yabai -m window --toggle split                  # N  togglesplit
+alt - 0x0B          : yabai -m space --balance                        # B  equalize
+
+# Group = stack layout on the current space; ctrl + hjkl walks the stack
+alt - 0x2E          : [ "$(yabai -m query --spaces --space | jq -r .type)" = stack ] && yabai -m space --layout bsp || yabai -m space --layout stack   # M
+ctrl + alt - 0x04   : yabai -m window --focus stack.prev || yabai -m window --focus stack.last
+ctrl + alt - 0x26   : yabai -m window --focus stack.prev || yabai -m window --focus stack.last
+ctrl + alt - 0x28   : yabai -m window --focus stack.next || yabai -m window --focus stack.first
+ctrl + alt - 0x25   : yabai -m window --focus stack.next || yabai -m window --focus stack.first
+
+# Focus / move (hjkl from hyprlain, arrows from caelestia)
+alt - 0x04          : yabai -m window --focus west
+alt - 0x26          : yabai -m window --focus south
+alt - 0x28          : yabai -m window --focus north
+alt - 0x25          : yabai -m window --focus east
+alt - left          : yabai -m window --focus west
+alt - down          : yabai -m window --focus south
+alt - up            : yabai -m window --focus north
+alt - right         : yabai -m window --focus east
+shift + alt - 0x04  : yabai -m window --warp west
+shift + alt - 0x26  : yabai -m window --warp south
+shift + alt - 0x28  : yabai -m window --warp north
+shift + alt - 0x25  : yabai -m window --warp east
+
+# Cycle windows on the space (caelestia ALT + TAB)
+alt - tab           : yabai -m window --focus next || yabai -m window --focus first
+shift + alt - tab   : yabai -m window --focus prev || yabai -m window --focus last
+
+# Resize (caelestia SUPER + -/= moved to ctrl so alt + - stays free for dashes; SHIFT for height; SUPER + ALT + arrows)
+ctrl + alt - 0x1B   : yabai -m window --resize right:-60:0  || yabai -m window --resize left:60:0
+ctrl + alt - 0x18   : yabai -m window --resize right:60:0   || yabai -m window --resize left:-60:0
+shift + ctrl + alt - 0x1B : yabai -m window --resize bottom:0:-60 || yabai -m window --resize top:0:60
+shift + ctrl + alt - 0x18 : yabai -m window --resize bottom:0:60  || yabai -m window --resize top:0:-60
+cmd + alt - left    : yabai -m window --resize right:-60:0  || yabai -m window --resize left:60:0
+cmd + alt - right   : yabai -m window --resize right:60:0   || yabai -m window --resize left:-60:0
+cmd + alt - up      : yabai -m window --resize bottom:0:-60 || yabai -m window --resize top:0:60
+cmd + alt - down    : yabai -m window --resize bottom:0:60  || yabai -m window --resize top:0:-60
+
+# ---------- Workspaces ----------
+alt - 1 : ~/.config/yabai/space.sh focus 1
+alt - 2 : ~/.config/yabai/space.sh focus 2
+alt - 3 : ~/.config/yabai/space.sh focus 3
+alt - 4 : ~/.config/yabai/space.sh focus 4
+alt - 5 : ~/.config/yabai/space.sh focus 5
+alt - 6 : ~/.config/yabai/space.sh focus 6
+alt - 7 : ~/.config/yabai/space.sh focus 7
+alt - 8 : ~/.config/yabai/space.sh focus 8
+alt - 9 : ~/.config/yabai/space.sh focus 9
+alt - 0 : ~/.config/yabai/space.sh focus 10
+
+shift + alt - 1 : ~/.config/yabai/space.sh move 1
+shift + alt - 2 : ~/.config/yabai/space.sh move 2
+shift + alt - 3 : ~/.config/yabai/space.sh move 3
+shift + alt - 4 : ~/.config/yabai/space.sh move 4
+shift + alt - 5 : ~/.config/yabai/space.sh move 5
+shift + alt - 6 : ~/.config/yabai/space.sh move 6
+shift + alt - 7 : ~/.config/yabai/space.sh move 7
+shift + alt - 8 : ~/.config/yabai/space.sh move 8
+shift + alt - 9 : ~/.config/yabai/space.sh move 9
+shift + alt - 0 : ~/.config/yabai/space.sh move 10
+
+ctrl + alt - right  : yabai -m space --focus next || yabai -m space --focus first
+ctrl + alt - left   : yabai -m space --focus prev || yabai -m space --focus last
+alt - pagedown      : yabai -m space --focus next || yabai -m space --focus first
+alt - pageup        : yabai -m space --focus prev || yabai -m space --focus last
+cmd + alt - pagedown : yabai -m window --space next; yabai -m space --focus next
+cmd + alt - pageup   : yabai -m window --space prev; yabai -m space --focus prev
+
+# ---------- Special workspaces (yabai scratchpads) ----------
+alt - 0x32          : ~/.config/yabai/scratch.sh term                 # `  dropdown terminal
+alt - 0x0A          : ~/.config/yabai/scratch.sh term                 # §  same key on ISO keyboards
+alt - 0x01          : ~/.config/yabai/scratch.sh magic                # S  special
+cmd + alt - 0x01    : yabai -m window --scratchpad magic              # alt S  send window to special
+ctrl + alt - 0x2E   : ~/.config/yabai/scratch.sh music                # ctrl M  Spotify
+alt - 0x02          : open -a Telegram                                # D  Telegram (tiled, not a scratchpad)
+ctrl + shift - escape : open -a "Activity Monitor"                    # system monitor
+
+# ---------- Utilities ----------
+shift + alt - 0x01  : screencapture -ic                               # shift S  region to clipboard
+shift + alt - 0x2E  : osascript -e 'set volume output muted not (output muted of (get volume settings))'   # shift M  mute
+alt - escape        : osascript -e 'tell application "System Events" to keystroke "q" using {command down, control down}'   # lock
+shift + alt - 0x0F  : yabai --restart-service                         # shift R  reload yabai
+
+# Wallpaper picker (caelestia SUPER + I); pressing again closes it. alt + shift + I = next without the picker
+alt - 0x22          : pkill -x rice-picker || ~/.local/bin/rice-picker
+shift + alt - 0x22  : ~/.local/bin/wallpaper-next
+
+# Session panel (caelestia CTRL + ALT + Delete); the bar's power button opens it too
+ctrl + alt - delete : ~/.local/bin/rice-shell toggle session
+
+# Dashboard (caelestia SUPER + O panels); hovering the notch opens it too
+alt - 0x1F          : ~/.local/bin/rice-shell toggle dashboard
+
+# Launcher (caelestia SUPER tap)
+alt - space         : ~/.local/bin/rice-shell toggle launcher

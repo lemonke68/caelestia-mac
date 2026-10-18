@@ -1,0 +1,33 @@
+From 14aafe2929c230ec5391f88e314af3c8bbe862bc Mon Sep 17 00:00:00 2001
+From: lemonke67 <igush55@gmail.com>
+Date: Sun, 18 Oct 2026 13:09:39 +0300
+Subject: [PATCH] Observe Steam's CEF helper so its main window can be tiled
+
+---
+ src/workspace.m | 10 +++++++++-
+ 1 file changed, 9 insertions(+), 1 deletion(-)
+
+diff --git a/src/workspace.m b/src/workspace.m
+index ace68c9..fd29728 100644
+--- a/src/workspace.m
++++ b/src/workspace.m
+@@ -105,7 +105,15 @@ bool workspace_application_is_observable(struct process *process)
+     NSRunningApplication *application = __atomic_load_n(&process->ns_application, __ATOMIC_RELAXED);
+     if (application) {
+         process->policy = [application activationPolicy];
+-        return process->policy == NSApplicationActivationPolicyRegular;
++        if (process->policy == NSApplicationActivationPolicyRegular) return true;
++
++        //
++        // NOTE(mac-rice): Steam's main window belongs to its CEF helper, an accessory app.
++        // Observe it anyway so the window gets an AX reference and can be tiled.
++        //
++
++        return process->policy == NSApplicationActivationPolicyAccessory &&
++               [[application bundleIdentifier] isEqualToString:@"com.valvesoftware.steam.helper"];
+     } else {
+         process->policy = NSApplicationActivationPolicyProhibited;
+         return false;
+-- 
+2.56.0
+

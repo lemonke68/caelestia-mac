@@ -1,0 +1,143 @@
+#!/bin/bash
+# Caelestia-style top bar. Drawn on top of the macOS menu bar, which yabai makes transparent
+# (menubar_opacity 0) and which no longer auto-hides, so nothing slides out on hover.
+
+CONFIG_DIR="$HOME/.config/sketchybar"
+PLUGIN_DIR="$CONFIG_DIR/plugins"
+source "$CONFIG_DIR/colors.sh"
+
+# Bar height and notch width for this Mac (38 / 230 on a 14" with a notch, 32 / 0 without);
+# rice-shell re-applies them when the screen changes.
+RICE_BAR_HEIGHT=38 RICE_NOTCH_WIDTH=230
+eval "$("$HOME/.local/bin/rice-shell" screen-info 2>/dev/null)"
+
+FONT="SF Pro"
+ICON_FONT="JetBrainsMono Nerd Font"
+
+sketchybar --bar position=top \
+                 height=$RICE_BAR_HEIGHT \
+                 notch_width=$RICE_NOTCH_WIDTH \
+                 color=$BAR_COLOR \
+                 corner_radius=0 \
+                 margin=0 \
+                 padding_left=10 \
+                 padding_right=10 \
+                 y_offset=0 \
+                 shadow=off \
+                 topmost=on \
+                 sticky=on
+
+sketchybar --default icon.font="$ICON_FONT:Regular:15.0" \
+                     icon.color=$TEXT \
+                     label.font="$FONT:Semibold:13.0" \
+                     label.color=$TEXT \
+                     padding_left=3 \
+                     padding_right=3 \
+                     icon.padding_left=8 \
+                     icon.padding_right=4 \
+                     label.padding_left=4 \
+                     label.padding_right=8 \
+                     background.height=26 \
+                     background.corner_radius=13 \
+                     updates=when_shown
+
+# Events fired from yabairc signals
+sketchybar --add event windows_on_spaces \
+           --add event spaces_changed
+
+# ---------- left: logo, workspaces, front app ----------
+sketchybar --add item logo left \
+           --set logo icon="$(glyph F0035)" \
+                      icon.font="$ICON_FONT:Regular:17.0" \
+                      icon.color=$ACCENT \
+                      icon.padding_left=6 icon.padding_right=6 \
+                      label.drawing=off \
+                      click_script="open -a 'System Settings'"
+
+for i in $(seq 1 10); do
+  sketchybar --add item space.$i left \
+             --set space.$i icon.drawing=off \
+                            label="$i" \
+                            label.font="$FONT:Bold:12.0" \
+                            label.align=center \
+                            label.width=26 \
+                            label.padding_left=0 label.padding_right=0 \
+                            padding_left=1 padding_right=1 \
+                            background.color=$ACCENT \
+                            background.height=24 \
+                            background.corner_radius=12 \
+                            background.drawing=off \
+                            drawing=off \
+                            click_script="$HOME/.config/yabai/space.sh focus $i"
+done
+
+sketchybar --add item spaces_updater left \
+           --set spaces_updater drawing=off \
+                                updates=on \
+                                script="$PLUGIN_DIR/spaces.sh" \
+           --subscribe spaces_updater space_change display_change front_app_switched \
+                                      windows_on_spaces spaces_changed system_woke
+
+sketchybar --add bracket spaces '/space\..*/' \
+           --set spaces background.color=$ITEM_BG \
+                        background.height=30 \
+                        background.corner_radius=15
+
+sketchybar --add item front_app left \
+           --set front_app icon.drawing=off \
+                           label.font="$FONT:Bold:13.0" \
+                           padding_left=8 \
+                           script="$PLUGIN_DIR/front_app.sh" \
+           --subscribe front_app front_app_switched
+
+# ---------- right: clock, battery, wifi, bluetooth, volume, layout; tray (rice-shell) left of them ----------
+sketchybar --add item clock right \
+           --set clock icon="$(glyph F0150)" \
+                       icon.color=$ON_ACCENT \
+                       label.color=$ON_ACCENT \
+                       label.font="$FONT:Bold:13.0" \
+                       background.color=$ACCENT \
+                       background.drawing=on \
+                       update_freq=10 \
+                       script="$PLUGIN_DIR/clock.sh" \
+                       click_script="open -a Calendar"
+
+sketchybar --add item battery right \
+           --set battery update_freq=60 \
+                         script="$PLUGIN_DIR/battery.sh" \
+           --subscribe battery power_source_change system_woke
+
+sketchybar --add item wifi right \
+           --set wifi label.drawing=off \
+                      update_freq=30 \
+                      script="$PLUGIN_DIR/wifi.sh" \
+                      click_script="$PLUGIN_DIR/popout.sh wifi" \
+           --subscribe wifi wifi_change system_woke
+
+sketchybar --add event bluetooth_change com.apple.bluetooth.state \
+           --add item bluetooth right \
+           --set bluetooth label.drawing=off \
+                           update_freq=20 \
+                           script="$PLUGIN_DIR/bluetooth.sh" \
+                           click_script="$PLUGIN_DIR/popout.sh bluetooth" \
+           --subscribe bluetooth bluetooth_change system_woke
+
+sketchybar --add item volume right \
+           --set volume script="$PLUGIN_DIR/volume.sh" \
+           --subscribe volume volume_change
+
+sketchybar --add event input_change AppleSelectedInputSourcesChangedNotification \
+           --add item layout right \
+           --set layout icon.drawing=off \
+                        label.font="JetBrainsMono Nerd Font:Bold:12.0" \
+                        label.padding_left=8 \
+                        script="$PLUGIN_DIR/layout.sh" \
+           --subscribe layout input_change
+
+sketchybar --add bracket status battery wifi bluetooth volume layout \
+           --set status background.color=$ITEM_BG \
+                        background.height=30 \
+                        background.corner_radius=15
+
+sketchybar --update
+sketchybar --trigger spaces_changed

@@ -1,0 +1,6 @@
+# built by native/build.sh and shell/build.sh
+bin/RiceShell.app/
+bin/rice-shell
+bin/rice-picker
+bin/rice-wallpaper
+.DS_Store

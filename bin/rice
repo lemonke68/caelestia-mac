@@ -1,0 +1,63 @@
+#!/bin/bash
+# mac-rice control.
+#   rice doctor [--plain]   what works, what still needs you
+#   rice setup              open the setup window (permissions, mode)
+#   rice sa                 full mode: yabai scripting addition (SIP via Recovery)
+#   rice update             pull, rebuild, relink, restart
+#   rice restart            restart every service
+#   rice theme [name|list]  theme-switch
+#   rice uninstall          remove the rice and put things back
+set -euo pipefail
+
+RICE_ROOT="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/.." && pwd)"
+export RICE_ROOT
+. "$RICE_ROOT/lib/common.sh"
+. "$RICE_ROOT/lib/sign.sh"
+. "$RICE_ROOT/lib/yabai.sh"
+. "$RICE_ROOT/lib/sa.sh"
+. "$RICE_ROOT/lib/doctor.sh"
+load_brew >/dev/null 2>&1 || true
+
+restart_all() {
+    service_start yabai
+    service_start skhd
+    brew services restart sketchybar >/dev/null 2>&1 || true
+    brew services restart borders >/dev/null 2>&1 || true
+    local label
+    for label in com.mac-rice.shell com.mac-rice.wallpaper; do
+        launchctl kickstart -k "gui/$(id -u)/$label" 2>/dev/null || warn "$label не найден — rice update"
+    done
+}
+
+cmd="${1:-help}"
+[ $# -gt 0 ] && shift
+case "$cmd" in
+    doctor)
+        rice_doctor "$@"
+        ;;
+    setup)
+        "$RICE_ROOT/bin/rice-shell" setup
+        ;;
+    sa)
+        sa_run "$@"
+        ;;
+    update)
+        if [ -d "$RICE_ROOT/.git" ]; then
+            git -C "$RICE_ROOT" pull --ff-only || warn "git pull не прошёл (локальные изменения?) — собираю как есть"
+        fi
+        exec "$RICE_ROOT/install.sh" --update
+        ;;
+    restart)
+        restart_all
+        ok "перезапущено"
+        ;;
+    theme)
+        exec "$RICE_ROOT/bin/theme-switch" "$@"
+        ;;
+    uninstall)
+        exec "$RICE_ROOT/uninstall.sh" "$@"
+        ;;
+    help|-h|--help|*)
+        sed -n '2,10p' "$0" | sed 's/^# \{0,1\}//'
+        ;;
+esac

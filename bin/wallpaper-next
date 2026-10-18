@@ -1,0 +1,12 @@
+#!/bin/sh
+# Next wallpaper from the current theme's wallpaperDir (alt + I; the Arch picker's stand-in).
+root="$(cd "$(dirname "$0")/.." && pwd)"
+theme="$(cat "$HOME/.local/state/mac-rice/theme" 2>/dev/null || echo hyprlain)"
+dir="$(jq -r '.wallpaperDir // empty' "$root/themes/$theme/theme.json" | sed "s|^~|$HOME|")"
+[ -d "$dir" ] || exit 1
+
+current="$("$root/bin/rice-wallpaper" get)"
+list="$(find "$dir" -maxdepth 2 -type f \( -iname '*.gif' -o -iname '*.png' -o -iname '*.jpg' -o -iname '*.jpeg' \) | sort)"
+next="$(printf '%s\n' "$list" | awk -v cur="$current" 'NR==1{first=$0} found{print; exit} $0==cur{found=1} END{if(!found||NR==0) print first}' | head -1)"
+[ -n "$next" ] || next="$(printf '%s\n' "$list" | head -1)"
+"$root/bin/rice-wallpaper" set "$next"

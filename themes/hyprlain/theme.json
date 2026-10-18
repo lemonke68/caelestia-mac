@@ -1,0 +1,9 @@
+{
+  "name": "hyprlain",
+  "description": "Serial Experiments Lain: чёрный фон, роза #CE7688 и песок #C1B48E",
+  "mode": "dark",
+  "wallpaper": "~/.config/assets/media/anim/lainonde.gif",
+  "wallpaperDir": "~/.config/assets/media",
+  "sessionGif": "~/.config/assets/sprites/anim/LainDressSlow.gif",
+  "mediaGif": "~/.config/assets/media/anim/lainliquidB5_006.gif"
+}

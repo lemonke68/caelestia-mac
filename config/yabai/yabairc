@@ -1,0 +1,77 @@
+#!/usr/bin/env sh
+
+# Scripting addition (full mode, `rice sa`): load on start and re-inject whenever Dock
+# restarts. Without the passwordless sudoers entry this is skipped; the rice then runs in
+# basic mode (space.sh switches desktops with ctrl + N instead).
+if [ -f /private/etc/sudoers.d/yabai ]; then
+    sudo -n yabai --load-sa
+    yabai -m signal --add event=dock_did_restart action="sudo -n yabai --load-sa"
+fi
+
+# Layout (Hyprland dwindle analogue)
+yabai -m config layout                  bsp
+yabai -m config window_placement        second_child
+yabai -m config auto_balance            off
+yabai -m config split_ratio             0.50
+
+# Gaps (caelestia windowGapsOut 10 / windowGapsIn 5) inside the rice-shell frame:
+# left = bar 60 + 10, right/bottom = border 10 + 10, top = 10 under SketchyBar
+yabai -m config top_padding             10
+yabai -m config bottom_padding          20
+yabai -m config left_padding            70
+yabai -m config right_padding           20
+yabai -m config window_gap              10
+rm -f ~/.local/state/mac-rice/fullscreen-spaces   # fullscreen.sh state; padding is reset above
+
+# Focus follows mouse (Hyprland follow_mouse = 1)
+yabai -m config focus_follows_mouse     autofocus
+yabai -m config mouse_follows_focus     off
+
+# Opacity (caelestia windowOpacity 0.95). macOS fades the whole window, text included.
+yabai -m config window_opacity          on
+yabai -m config window_opacity_duration 0.15
+yabai -m config active_window_opacity   0.95
+yabai -m config normal_window_opacity   0.95
+
+yabai -m config window_shadow           float
+yabai -m config window_animation_duration 0.0
+
+# Alt + drag moves, Alt + right-drag resizes (Hyprland bindm)
+yabai -m config mouse_modifier          alt
+yabai -m config mouse_action1           move
+yabai -m config mouse_action2           resize
+yabai -m config mouse_drop_action       swap
+
+# Apps that should float instead of tiling
+yabai -m rule --add app="^(System Settings|Системные настройки|System Information|Calculator|Калькулятор|Archive Utility|Activity Monitor|Мониторинг системы|Finder|App Store|Photo Booth|FaceTime|Amphetamine|Macs Fan Control|boringNotch|TheBoringNotch|rice-shell|rice-picker|rice-wallpaper|Backdrop|SF Symbols|iloader|Sideloadly|RAR Extractor - Unarchiver|VanyaVPN|V2Box|FlClashX|Karing|Tailscale|ZeroTier)$" manage=off
+yabai -m rule --add title="^(Settings|Preferences|Настройки)" manage=off
+
+# Special workspaces (caelestia special:term / special:music); Telegram tiles like a normal window
+yabai -m rule --add app="^kitty$" title="^kitty-dropdown$" scratchpad=term grid=20:8:1:0:6:9
+yabai -m rule --add app="^Spotify$" scratchpad=music grid=6:6:1:1:4:4
+
+# Steam: the main window gets workspace 5 to itself (its 1010pt minimum width does not fit a
+# split); its dialogs float over it on the same workspace. Done in steam.sh, since CEF sets
+# the window title only after the window appears and a title rule would miss it.
+yabai -m signal --add event=window_created app="^Steam Helper$" action="~/.config/yabai/steam.sh"
+yabai -m rule --apply
+
+
+# macOS menu bar: always shown but fully transparent, so it never slides out on hover.
+# SketchyBar sits on top of it (topmost=on).
+yabai -m config menubar_opacity 0.0
+
+# SketchyBar + rice-shell: keep the workspace widgets in sync
+# The menu bar stays (transparent) and yabai already reserves its height; external_bar adds
+# only what SketchyBar is taller than it (0 with a notch, 8 without; see rice-shell screen-info)
+RICE_EXTERNAL_BAR=0
+eval "$(~/.local/bin/rice-shell screen-info 2>/dev/null)"
+yabai -m config external_bar all:$RICE_EXTERNAL_BAR:0
+yabai -m signal --add event=window_created   action="sketchybar --trigger windows_on_spaces; ~/.local/bin/rice-shell spaces-changed"
+yabai -m signal --add event=window_destroyed action="sketchybar --trigger windows_on_spaces; ~/.local/bin/rice-shell spaces-changed"
+yabai -m signal --add event=window_moved     action="sketchybar --trigger windows_on_spaces; ~/.local/bin/rice-shell spaces-changed"
+yabai -m signal --add event=space_created    action="sketchybar --trigger spaces_changed; ~/.local/bin/rice-shell spaces-changed"
+yabai -m signal --add event=space_destroyed  action="sketchybar --trigger spaces_changed; ~/.local/bin/rice-shell spaces-changed"
+yabai -m signal --add event=window_title_changed action="~/.local/bin/rice-shell spaces-changed"
+yabai -m signal --add event=window_focused action="~/.local/bin/rice-shell spaces-changed"
+echo "yabai configuration loaded"
