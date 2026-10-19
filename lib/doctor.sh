@@ -76,7 +76,9 @@ rice_doctor() {
     if agent_running com.mac-rice.wallpaper; then doctor_line wallpaper ok "обои (rice-wallpaper)"
     else doctor_line wallpaper warn "rice-wallpaper не запущен" "rice restart"; fi
 
-    if sa_loaded && sa_sip_ok && sa_bootarg_ok; then
+    if sa_loaded && sa_sip_ok && sa_bootarg_ok && ! sa_sudoers_ok; then
+        doctor_line mode warn "yabai обновился — запись sudoers устарела" "rice sa (спросит пароль), иначе после перезагрузки полный режим отвалится"
+    elif sa_loaded && sa_sip_ok && sa_bootarg_ok; then
         doctor_line mode ok "полный режим (scripting addition)"
     elif [ "$(state_get sa)" = pending ]; then
         doctor_line mode warn "полный режим: не закончен" "rice sa"

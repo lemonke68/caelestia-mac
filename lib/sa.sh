@@ -17,6 +17,10 @@ sa_sip_ok() {
 
 sa_bootarg_ok() { ! is_arm || nvram boot-args 2>/dev/null | grep -q -- '-arm64e_preview_abi'; }
 sa_loaded() { [ -S "/tmp/yabai-sa_$USER.socket" ] && [ -f "$RICE_SUDOERS" ]; }
+yabai_hash() { shasum -a 256 "$(command -v yabai)" 2>/dev/null | cut -d' ' -f1; }
+# The sudoers entry pins yabai's hash: after a rebuild `sudo -n yabai --load-sa` stops working
+# (and the scripting addition is gone after the next restart) until it is written again.
+sa_sudoers_ok() { [ -f "$RICE_SUDOERS" ] && [ "$(state_get sudoers_hash)" = "$(yabai_hash)" ]; }
 
 sa_write_sudoers() {
     local bin hash
@@ -30,6 +34,7 @@ sa_write_sudoers() {
         sudo rm -f "$RICE_SUDOERS"
         die "запись sudoers не прошла проверку, удалил её"
     fi
+    state_set sudoers_hash "$hash"
 }
 
 # Reopen Terminal on the next login to finish `rice sa`.
@@ -131,8 +136,9 @@ sa_run() {
     local resume="${1:-}"
     [ "$resume" = --resume ] && sa_resume_disarm
 
-    if sa_loaded && sa_sip_ok && sa_bootarg_ok; then
+    if sa_loaded && sa_sip_ok && sa_bootarg_ok && sa_sudoers_ok; then
         ok "полный режим уже включён"
+        state_set sa on
         return 0
     fi
 

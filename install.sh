@@ -201,6 +201,9 @@ step_defaults() {
     fi
     ok "меню-бар не прячется"
 
+    # Full mode set up earlier (by hand or another checkout) counts too
+    if [ -f "$RICE_SUDOERS" ] && sa_sip_ok; then state_set sa on; fi
+
     # Basic mode switches desktops with ctrl + 1…9 (symbolic hotkeys 118…126)
     if [ "$(state_get sa)" != on ] && [ "$(state_get desktop_keys)" != on ]; then
         local i key ascii
@@ -213,14 +216,17 @@ step_defaults() {
         /System/Library/PrivateFrameworks/SystemAdministration.framework/Resources/activateSettings -u 2>/dev/null || true
         state_set desktop_keys on
     fi
-    ok "ctrl + 1…9 переключает рабочие столы (запасной путь базового режима)"
+    [ "$(state_get desktop_keys)" = on ] && ok "ctrl + 1…9 переключает рабочие столы (запасной путь базового режима)"
+    return 0
 }
 
 step_build() {
     say "Сборка rice-shell и обоев (пару минут)"
-    "$RICE_ROOT/native/build.sh" >/dev/null
+    local log="$RICE_STATE_DIR/build.log"
+    mkdir -p "$RICE_STATE_DIR"
+    "$RICE_ROOT/native/build.sh" >"$log" 2>&1 || die "сборка обоев упала, лог: ${log/#$HOME/~}"
     ok "rice-wallpaper, rice-picker"
-    "$RICE_ROOT/shell/build.sh" >/dev/null
+    "$RICE_ROOT/shell/build.sh" >>"$log" 2>&1 || die "сборка rice-shell упала, лог: ${log/#$HOME/~}"
     ok "RiceShell.app"
 }
 
