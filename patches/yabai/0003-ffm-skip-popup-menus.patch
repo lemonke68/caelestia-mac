@@ -1,0 +1,32 @@
+From c7a5b71611d93210b3b92e12ab690f5add8ec620 Mon Sep 17 00:00:00 2001
+From: lemonke67 <igush55@gmail.com>
+Date: Mon, 19 Oct 2026 19:29:45 +0300
+Subject: [PATCH] Do not focus popup menus under the cursor with
+ focus_follows_mouse
+
+---
+ src/event_loop.c | 8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+diff --git a/src/event_loop.c b/src/event_loop.c
+index 359191a..2dc123a 100644
+--- a/src/event_loop.c
++++ b/src/event_loop.c
+@@ -1398,6 +1398,14 @@ static EVENT_HANDLER(MOUSE_MOVED)
+         if (window->id == g_window_manager.focused_window_id) goto out;
+         if (!window_manager_is_window_eligible(window))       goto out;
+ 
++        //
++        // NOTE(mac-rice): Popup menus (Telegram's message menu, Steam's "Add a Game" menu) are
++        // separate windows at popup level. Focusing one makes Qt/CEF close it before the click
++        // lands, so the menu shows but its items do nothing. Leave focus alone over them.
++        //
++
++        if (window_level(window->id) >= CGWindowLevelForKey(kCGPopUpMenuWindowLevelKey)) goto out;
++
+         if (g_window_manager.ffm_mode == FFM_AUTOFOCUS) {
+ 
+             //
+-- 
+2.56.0
+
