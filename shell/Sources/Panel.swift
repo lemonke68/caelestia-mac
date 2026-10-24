@@ -151,11 +151,22 @@ final class Panel<Content: View> {
     var isOpen: Bool { state.open }
     var frame: NSRect { window.frame }
 
-    func toggle() { isOpen ? close() : open() }
+    func toggle() {
+        // Open by our state but not on screen here (seen after long uptimes): the next hotkey
+        // would only "close" an invisible panel. Reset and open it instead.
+        if isOpen && !(window.isVisible && window.isOnActiveSpace) {
+            log("panel: open but not visible (visible=\(window.isVisible) onActiveSpace=\(window.isOnActiveSpace)), reopening")
+            state.open = false
+            monitors.forEach { NSEvent.removeMonitor($0) }
+            monitors = []
+        }
+        isOpen ? close() : open()
+    }
 
     /// activate = take keyboard focus (hotkeys); hover-opened panels leave focus where it is.
     func open(activate: Bool = true) {
         guard !isOpen else { return }
+        window.collectionBehavior = [.canJoinAllSpaces, .stationary, .ignoresCycle, .fullScreenAuxiliary]
         window.orderFrontRegardless()
         if activate {
             previousApp = NSWorkspace.shared.frontmostApplication

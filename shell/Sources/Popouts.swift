@@ -374,6 +374,9 @@ final class PopoutController {
 
     init(screen: NSScreen) { self.screen = screen }
 
+    /// Screen rebuild: an open popout must not outlive its controller (it would stay on screen).
+    func close() { panel?.close() }
+
     /// `x` is the clicked SketchyBar item's centre in screen coordinates.
     func toggle(_ kind: String, x: CGFloat) {
         if let panel, panel.isOpen {

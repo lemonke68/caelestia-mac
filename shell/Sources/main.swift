@@ -16,6 +16,13 @@ import AppKit
 import Combine
 import SwiftUI
 
+/// Timestamped line in /tmp/rice-shell.err.log (the launchd agent's stderr).
+func log(_ message: String) {
+    let f = DateFormatter()
+    f.dateFormat = "yyyy-MM-dd HH:mm:ss"
+    FileHandle.standardError.write(Data("\(f.string(from: Date())) \(message)\n".utf8))
+}
+
 enum Shell {
     static let notification = Notification.Name("rice.shell")
 
@@ -35,8 +42,14 @@ final class App: NSObject, NSApplicationDelegate {
     private let setup = SetupController()
     private var fullscreenSub: AnyCancellable?
     private var clickThrough: [ObjectIdentifier: Bool] = [:]
+    private var rebuildPending = false
+    /// Keeps App Nap off: a background agent gets its timers throttled after long idle.
+    private var activity: NSObjectProtocol?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        activity = ProcessInfo.processInfo.beginActivity(
+            options: [.userInitiatedAllowingIdleSystemSleep, .latencyCritical], reason: "rice-shell desktop chrome")
+        log("start")
         buildWindows()
         TrayService.shared.start()
         fullscreenSub = SpacesService.shared.$fullscreen.removeDuplicates().dropFirst()
@@ -50,11 +63,31 @@ final class App: NSObject, NSApplicationDelegate {
         // zoomed-out transform; laying them out again after unlock puts them back.
         DistributedNotificationCenter.default().addObserver(
             self, selector: #selector(screensChanged), name: .init("com.apple.screenIsUnlocked"), object: nil)
+        // After sleep the windows can lose their all-spaces placement (open by our state but not
+        // on screen): build them again once the screens have settled.
+        let ws = NSWorkspace.shared.notificationCenter
+        for name in [NSWorkspace.didWakeNotification, NSWorkspace.screensDidWakeNotification,
+                     NSWorkspace.sessionDidBecomeActiveNotification] {
+            ws.addObserver(self, selector: #selector(screensChanged), name: name, object: nil)
+        }
+        for name in [NSWorkspace.willSleepNotification, NSWorkspace.screensDidSleepNotification] {
+            ws.addObserver(forName: name, object: nil, queue: .main) { log("event: \($0.name.rawValue)") }
+        }
         DistributedNotificationCenter.default().addObserver(
             self, selector: #selector(command(_:)), name: Shell.notification, object: nil)
     }
 
-    @objc private func screensChanged() { buildWindows() }
+    /// Coalesced: a wake brings screensDidWake, didWake, screen parameters and unlock in a burst.
+    @objc private func screensChanged(_ note: Notification) {
+        log("event: \(note.name.rawValue)")
+        guard !rebuildPending else { return }
+        rebuildPending = true
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+            self.rebuildPending = false
+            log("rebuild windows")
+            self.buildWindows()
+        }
+    }
 
     /// SketchyBar and yabai follow the screen too: a Mac without a notch, the lid closed on an
     /// external display. sketchybarrc and yabairc read the same values at load.
@@ -102,6 +135,7 @@ final class App: NSObject, NSApplicationDelegate {
         launcher = LauncherController(screen: screen)
         osd?.panel.close()
         osd = OsdController(screen: screen)
+        popouts?.close()
         popouts = PopoutController(screen: screen)
         clickThrough = [:]
         windows.forEach { $0.orderFrontRegardless() }
@@ -111,7 +145,7 @@ final class App: NSObject, NSApplicationDelegate {
     @objc private func command(_ note: Notification) {
         let args = (note.object as? String ?? "").split(separator: " ").map(String.init)
         // Logged so a hotkey that "does nothing" can be told apart from a lost notification
-        if args.first != "spaces-changed" { FileHandle.standardError.write(Data("command: \(args.joined(separator: " "))\n".utf8)) }
+        if args.first != "spaces-changed" { log("command: \(args.joined(separator: " "))") }
         switch args.first {
         case "spaces-changed":
             SpacesService.shared.refresh()
