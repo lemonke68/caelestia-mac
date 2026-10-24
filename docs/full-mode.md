@@ -1,78 +1,78 @@
-# Полный режим: пошагово
+# Full mode: step by step
 
-Эту страницу удобно открыть на телефоне: Mac на время выключится.
+This page is handy to open on a phone, since the Mac will be shut down for a while.
 
-Полный режим даёт yabai управлять рабочими столами: мгновенное переключение, создание столов
-на лету, перенос окон между ними, прозрачность. Для этого один раз нужно частично выключить
-защиту macOS (SIP). Сделать это можно только из режима восстановления (Recovery).
+Full mode lets yabai manage spaces: instant switching, creating spaces on the fly, moving windows
+between them, and transparency. It requires partially disabling macOS's System Integrity Protection
+(SIP) once, which can only be done from Recovery.
 
-Запусти в терминале:
+Run in a terminal:
 
 ```bash
 rice sa
 ```
 
-Он проверит, что уже сделано, и скажет, что делать дальше. Ниже те же шаги.
+It checks what is already done and tells you what to do next. The same steps are listed below.
 
 ## Apple Silicon (M1, M2, M3, M4…)
 
-1. Меню  → **Выключить**. Дождись, пока экран погаснет.
-2. Нажми и **держи** кнопку питания (она же Touch ID), пока не появится
-   «Загрузка параметров запуска». Отпусти.
-3. Выбери **«Параметры»** → **«Продолжить»**. Если спросит — выбери своего пользователя и введи пароль.
-4. В строке меню сверху: **«Утилиты» → «Терминал»**.
-5. Введи команду и нажми Enter:
+1.  menu → **Shut Down**. Wait for the screen to go dark.
+2. Press and **hold** the power button (the Touch ID button) until
+   "Loading startup options" appears. Release it.
+3. Choose **Options** → **Continue**. If asked, select your user and enter the password.
+4. In the menu bar at the top: **Utilities → Terminal**.
+5. Enter this command and press Enter:
 
    ```
    csrutil enable --without fs --without debug --without nvram
    ```
 
-   Она спросит подтверждение (`y`), имя пользователя и пароль — это нормально.
-6. Введи вторую команду:
+   It asks for confirmation (`y`), a username and a password; this is expected.
+6. Enter the second command:
 
    ```
    nvram boot-args=-arm64e_preview_abi
    ```
 
-   Если она ответит ошибкой — ничего страшного, установщик сделает это сам после перезагрузки.
-7. Меню  → **Перезагрузить**.
+   If it returns an error, that is fine: the installer sets it after the reboot.
+7.  menu → **Restart**.
 
-После входа в систему **Терминал откроется сам** и закончит настройку: попросит пароль от Mac
-(для записи sudoers) и, если шаг 6 не прошёл, ещё одну перезагрузку.
+After you log in, **Terminal opens on its own** and finishes the setup: it asks for your macOS
+password (to write the sudoers entry) and, if step 6 failed, for one more reboot.
 
 ## Intel
 
-1. Меню  → **Перезагрузить** и сразу зажми **⌘ + R** до логотипа Apple.
-2. **«Утилиты» → «Терминал»**.
-3. Команда:
+1.  menu → **Restart**, then immediately hold **⌘ + R** until the Apple logo appears.
+2. **Utilities → Terminal**.
+3. Command:
 
    ```
    csrutil disable --with kext --with dtrace --with nvram --with basesystem
    ```
 
-4. Меню  → **Перезагрузить**. Терминал откроется сам.
+4.  menu → **Restart**. Terminal opens on its own.
 
-## Проверка
+## Verifying
 
 ```bash
 rice doctor
 ```
 
-Последняя строка — «полный режим (scripting addition)».
+The last line should read "full mode (scripting addition)".
 
-## Как вернуть
+## Reverting
 
-`rice uninstall` убирает scripting addition, запись sudoers и boot-arg. SIP включается обратно
-в Recovery (шаги 1–4 выше), команда:
+`rice uninstall` removes the scripting addition, the sudoers entry and the boot-arg. SIP is
+re-enabled from Recovery (steps 1–4 above) with:
 
 ```
 csrutil enable
 ```
 
-## Если что-то пошло не так
+## Troubleshooting
 
-- **После обновления macOS рабочие столы перестали переключаться.** yabai не успел за новой
-  версией. Запусти `rice update`: он пересоберёт yabai. Если не помогло — подожди обновления форка,
-  базовые функции работают и так.
-- **Терминал не открылся после перезагрузки.** Запусти `rice sa` вручную.
-- **`csrutil` пишет, что нужна авторизация.** Выбери пользователя-администратора и его пароль.
+- **Space switching stopped working after a macOS update.** yabai has not caught up with the new
+  version yet. Run `rice update` to rebuild yabai. If that does not help, wait for a fork update;
+  basic features keep working in the meantime.
+- **Terminal did not open after the reboot.** Run `rice sa` manually.
+- **`csrutil` says authorization is required.** Select an administrator user and enter their password.

@@ -25,7 +25,7 @@ die()  { printf ' %s✗%s %s\n' "$c_red" "$c_off" "$*" >&2; exit 1; }
 has_tty() { : 2>/dev/null </dev/tty; }
 tty_read() { read -r "$@" </dev/tty; }
 
-# ask "Вопрос?" y|n — default answer on Enter; RICE_YES=1 takes the default without asking.
+# ask "Question?" y|n — default answer on Enter; RICE_YES=1 takes the default without asking.
 ask() {
     local hint="[y/N]" answer=""
     [ "$2" = y ] && hint="[Y/n]"
@@ -41,7 +41,7 @@ ask() {
 
 pause() {
     if [ "${RICE_YES:-0}" = 1 ] || ! has_tty; then return 0; fi
-    printf '%s' "${1:-Нажми Enter, чтобы продолжить… }" >/dev/tty
+    printf '%s' "${1:-Press Enter to continue… }" >/dev/tty
     tty_read _ || true
 }
 
@@ -83,7 +83,7 @@ link() {
         local backup="$RICE_BACKUP/$RICE_RUN_ID/${dst#$HOME/}"
         mkdir -p "$(dirname "$backup")"
         mv "$dst" "$backup"
-        info "старый ${dst/#$HOME/~} → ${backup/#$HOME/~}"
+        info "old ${dst/#$HOME/~} → ${backup/#$HOME/~}"
     fi
     mkdir -p "$(dirname "$dst")"
     ln -s "$src" "$dst"

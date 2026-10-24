@@ -24,15 +24,15 @@ sa_sudoers_ok() { [ -f "$RICE_SUDOERS" ] && [ "$(state_get sudoers_hash)" = "$(y
 
 sa_write_sudoers() {
     local bin hash
-    bin="$(command -v yabai)" || die "yabai не найден"
+    bin="$(command -v yabai)" || die "yabai not found"
     hash="$(shasum -a 256 "$bin" | cut -d' ' -f1)"
-    info "обновляю $RICE_SUDOERS (может спросить пароль от Mac)"
+    info "updating $RICE_SUDOERS (may ask for your macOS password)"
     printf '%s ALL=(root) NOPASSWD: sha256:%s %s --load-sa\n' "$(whoami)" "$hash" "$bin" \
         | sudo tee "$RICE_SUDOERS" >/dev/null
     sudo chmod 0440 "$RICE_SUDOERS"
     if ! sudo visudo -cf "$RICE_SUDOERS" >/dev/null; then
         sudo rm -f "$RICE_SUDOERS"
-        die "запись sudoers не прошла проверку, удалил её"
+        die "sudoers entry failed validation and was removed"
     fi
     state_set sudoers_hash "$hash"
 }
@@ -74,61 +74,61 @@ sa_resume_disarm() {
 sa_recovery_steps() {
     cat <<EOF
 
-${c_bold}Нужно один раз зайти в режим восстановления (Recovery).${c_off}
-Mac выключится, поэтому сфотографируй эти шаги или открой их на телефоне:
+${c_bold}A one-time boot into Recovery is required.${c_off}
+The Mac will shut down, so take a photo of these steps or open them on a phone:
 https://github.com/$RICE_REPO/blob/main/docs/full-mode.md
 
 EOF
     if is_arm; then
         cat <<EOF
-  1. Меню  → Выключить. Дождись, пока экран погаснет.
-  2. Нажми и держи кнопку питания (Touch ID), пока не появится
-     «Загрузка параметров запуска». Отпусти.
-  3. Выбери «Параметры» → «Продолжить». Если спросит — выбери своего
-     пользователя и введи пароль.
-  4. В строке меню сверху: «Утилиты» → «Терминал».
-  5. Введи команду и нажми Enter (спросит «y» и пароль — подтверди):
+  1.  menu → Shut Down. Wait for the screen to go dark.
+  2. Press and hold the power button (Touch ID) until
+     "Loading startup options" appears. Release it.
+  3. Choose Options → Continue. If asked, select your user
+     and enter the password.
+  4. In the menu bar at the top: Utilities → Terminal.
+  5. Enter this command and press Enter (confirm with "y" and the password):
 
        ${c_bold}csrutil enable --without fs --without debug --without nvram${c_off}
 
-  6. Затем вторую (если она ответит ошибкой — ничего страшного,
-     установщик сделает это сам после перезагрузки):
+  6. Then this one (an error here is fine; the installer
+     does it after the reboot):
 
        ${c_bold}nvram boot-args=-arm64e_preview_abi${c_off}
 
-  7. Меню  → Перезагрузить.
+  7.  menu → Restart.
 EOF
     else
         cat <<EOF
-  1. Меню  → Перезагрузить и сразу зажми ⌘ + R до логотипа Apple.
-  2. В строке меню сверху: «Утилиты» → «Терминал».
-  3. Введи команду и нажми Enter:
+  1.  menu → Restart, then immediately hold ⌘ + R until the Apple logo.
+  2. In the menu bar at the top: Utilities → Terminal.
+  3. Enter this command and press Enter:
 
        ${c_bold}csrutil disable --with kext --with dtrace --with nvram --with basesystem${c_off}
 
-  4. Меню  → Перезагрузить.
+  4.  menu → Restart.
 EOF
     fi
     cat <<EOF
 
-После входа в систему Терминал откроется сам и закончит настройку.
-Вернуть всё как было: ${c_bold}rice uninstall${c_off} (там же инструкция, как включить SIP обратно).
+After you log in, Terminal opens on its own and finishes the setup.
+To revert everything: ${c_bold}rice uninstall${c_off} (it also explains how to re-enable SIP).
 EOF
 }
 
 sa_warning() {
     cat <<EOF
 
-${c_bold}Полный режим${c_off} — это то, что умеет yabai со своим «scripting addition»:
-  • мгновенное переключение рабочих столов и создание их по требованию (alt + 1…0)
-  • перенос окон между столами (alt + shift + 1…0)
-  • прозрачный системный меню-бар, прозрачность окон, special workspaces
+${c_bold}Full mode${c_off} enables what yabai can do with its scripting addition:
+  • instant space switching and on-demand space creation (alt + 1…0)
+  • moving windows between spaces (alt + shift + 1…0)
+  • transparent system menu bar, window transparency, special workspaces
 
-Цена: часть защиты macOS (SIP) выключается. Что это значит на практике:
-  • система менее защищена от вредоносных программ с правами администратора;
-  • на Apple Silicon перестают запускаться iPhone/iPad-приложения из App Store;
-  • после крупных обновлений macOS yabai может временно сломаться до фикса.
-Без полного режима всё остальное работает: тайлинг, бары, дашборд, темы, обои.
+Cost: part of macOS's protection (SIP) is disabled. In practice:
+  • the system is less protected against malware running with admin rights;
+  • iPhone/iPad apps from the App Store stop launching on Apple Silicon;
+  • major macOS updates may temporarily break yabai until it is patched.
+Everything else works without full mode: tiling, bars, dashboard, themes, wallpapers.
 EOF
 }
 
@@ -137,48 +137,48 @@ sa_run() {
     [ "$resume" = --resume ] && sa_resume_disarm
 
     if sa_loaded && sa_sip_ok && sa_bootarg_ok && sa_sudoers_ok; then
-        ok "полный режим уже включён"
+        ok "full mode is already enabled"
         state_set sa on
         return 0
     fi
 
     if [ "$resume" != --resume ]; then
         sa_warning
-        ask "Включить полный режим?" n || { info "оставляю базовый режим; включить позже: rice sa"; return 0; }
+        ask "Enable full mode?" n || { info "keeping basic mode; enable later with: rice sa"; return 0; }
     fi
 
     if ! sa_sip_ok; then
-        say "Шаг 1 из 3: SIP (Recovery)"
+        say "Step 1 of 3: SIP (Recovery)"
         sa_recovery_steps
         sa_resume_arm
         state_set sa pending
         echo
-        info "Когда будешь готов — выключи Mac по шагам выше."
+        info "When ready, shut down the Mac following the steps above."
         return 0
     fi
-    ok "SIP настроен"
+    ok "SIP configured"
 
     if ! sa_bootarg_ok; then
-        say "Шаг 2 из 3: boot-arg для Apple Silicon"
+        say "Step 2 of 3: boot-arg for Apple Silicon"
         local current
         current="$(nvram boot-args 2>/dev/null | cut -f2-)"
-        sudo nvram boot-args="${current:+$current }-arm64e_preview_abi" || die "nvram не дал записать boot-args"
+        sudo nvram boot-args="${current:+$current }-arm64e_preview_abi" || die "nvram refused to write boot-args"
         sa_resume_arm
         state_set sa pending
-        ok "boot-arg записан"
-        if ask "Нужна ещё одна перезагрузка. Перезагрузить сейчас?" y; then
+        ok "boot-arg written"
+        if ask "One more reboot is needed. Restart now?" y; then
             osascript -e 'tell application "System Events" to restart' >/dev/null 2>&1 || sudo shutdown -r now
         else
-            info "перезагрузись, когда удобно — Терминал продолжит сам"
+            info "restart when convenient; Terminal will continue on its own"
         fi
         return 0
     fi
-    ok "boot-arg на месте"
+    ok "boot-arg in place"
 
-    say "Шаг 3 из 3: scripting addition"
+    say "Step 3 of 3: scripting addition"
     sa_write_sudoers
-    sudo yabai --load-sa || die "yabai --load-sa не сработал; подробности: /tmp/yabai_$USER.err.log"
+    sudo yabai --load-sa || die "yabai --load-sa failed; details: /tmp/yabai_$USER.err.log"
     yabai --restart-service >/dev/null 2>&1 || true
     state_set sa on
-    ok "полный режим включён"
+    ok "full mode enabled"
 }

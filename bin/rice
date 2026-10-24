@@ -25,7 +25,7 @@ restart_all() {
     brew services restart borders >/dev/null 2>&1 || true
     local label
     for label in com.mac-rice.shell com.mac-rice.wallpaper; do
-        launchctl kickstart -k "gui/$(id -u)/$label" 2>/dev/null || warn "$label не найден — rice update"
+        launchctl kickstart -k "gui/$(id -u)/$label" 2>/dev/null || warn "$label not found; run rice update"
     done
 }
 
@@ -43,13 +43,13 @@ case "$cmd" in
         ;;
     update)
         if [ -d "$RICE_ROOT/.git" ]; then
-            git -C "$RICE_ROOT" pull --ff-only || warn "git pull не прошёл (локальные изменения?) — собираю как есть"
+            git -C "$RICE_ROOT" pull --ff-only || warn "git pull failed (local changes?); building as is"
         fi
         exec "$RICE_ROOT/install.sh" --update
         ;;
     restart)
         restart_all
-        ok "перезапущено"
+        ok "restarted"
         ;;
     theme)
         exec "$RICE_ROOT/bin/theme-switch" "$@"

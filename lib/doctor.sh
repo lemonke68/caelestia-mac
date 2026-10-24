@@ -29,60 +29,60 @@ rice_doctor() {
     load_brew >/dev/null 2>&1 || true
 
     if command -v brew >/dev/null 2>&1; then doctor_line brew ok "Homebrew"
-    else doctor_line brew fail "Homebrew не установлен" "запусти install.sh"; fi
+    else doctor_line brew fail "Homebrew not installed" "run install.sh"; fi
 
-    if [ -n "$(rice_sign_identity)" ]; then doctor_line signing ok "сертификат подписи: $(rice_sign_identity)"
-    else doctor_line signing warn "нет сертификата подписи" "после пересборки macOS снова спросит разрешения"; fi
+    if [ -n "$(rice_sign_identity)" ]; then doctor_line signing ok "signing certificate: $(rice_sign_identity)"
+    else doctor_line signing warn "no signing certificate" "macOS will ask for permissions again after each rebuild"; fi
 
     if ! command -v yabai >/dev/null 2>&1; then
-        doctor_line yabai fail "yabai не установлен" "запусти install.sh"
+        doctor_line yabai fail "yabai not installed" "run install.sh"
     elif yabai -m query --spaces >/dev/null 2>&1; then
-        doctor_line yabai ok "yabai: тайлинг работает"
+        doctor_line yabai ok "yabai: tiling works"
     elif tail -5 "/tmp/yabai_$USER.err.log" 2>/dev/null | grep -q 'accessibility'; then
-        doctor_line yabai fail "yabai: нет доступа" "Универсальный доступ → включи yabai"
+        doctor_line yabai fail "yabai: no access" "Accessibility → enable yabai"
     else
-        doctor_line yabai fail "yabai не запущен" "yabai --start-service"
+        doctor_line yabai fail "yabai not running" "yabai --start-service"
     fi
 
     if ! command -v skhd >/dev/null 2>&1; then
-        doctor_line skhd fail "skhd не установлен" "запусти install.sh"
+        doctor_line skhd fail "skhd not installed" "run install.sh"
     elif running_steady skhd; then
-        doctor_line skhd ok "skhd: горячие клавиши работают"
+        doctor_line skhd ok "skhd: hotkeys work"
     elif tail -5 "/tmp/skhd_$USER.err.log" 2>/dev/null | grep -q 'accessibility'; then
-        doctor_line skhd fail "skhd: нет доступа" "Универсальный доступ → включи skhd"
+        doctor_line skhd fail "skhd: no access" "Accessibility → enable skhd"
     elif tail -1 "/tmp/skhd_$USER.err.log" 2>/dev/null | grep -q 'secure keyboard entry'; then
         # macOS hands the keyboard to one app only: the lock screen, or Terminal / a password
         # manager with "Secure Keyboard Entry" on. skhd retries on its own once it is released.
         local owner
         owner="$(tail -1 "/tmp/skhd_$USER.err.log" | sed -n "s/.*by ([0-9]*) '\(.*\)'.*/\1/p")"
         if [ "$owner" = loginwindow ]; then
-            doctor_line skhd warn "skhd ждёт разблокировки экрана" "запустится сам"
+            doctor_line skhd warn "skhd is waiting for the screen to unlock" "starts on its own"
         else
-            doctor_line skhd fail "skhd: клавиатуру занял $owner" "выключи в нём «Безопасный ввод с клавиатуры» (Secure Keyboard Entry)"
+            doctor_line skhd fail "skhd: keyboard captured by $owner" "turn off Secure Keyboard Entry in it"
         fi
     else
-        doctor_line skhd fail "skhd не запущен" "skhd --start-service"
+        doctor_line skhd fail "skhd not running" "skhd --start-service"
     fi
 
     if pgrep -x sketchybar >/dev/null; then doctor_line sketchybar ok "SketchyBar"
-    else doctor_line sketchybar fail "SketchyBar не запущен" "brew services start sketchybar"; fi
+    else doctor_line sketchybar fail "SketchyBar not running" "brew services start sketchybar"; fi
 
-    if pgrep -x borders >/dev/null; then doctor_line borders ok "рамки окон (borders)"
-    else doctor_line borders warn "borders не запущен" "brew services start borders"; fi
+    if pgrep -x borders >/dev/null; then doctor_line borders ok "window borders (borders)"
+    else doctor_line borders warn "borders not running" "brew services start borders"; fi
 
     if agent_running com.mac-rice.shell; then doctor_line shell ok "rice-shell"
-    else doctor_line shell fail "rice-shell не запущен" "rice restart"; fi
+    else doctor_line shell fail "rice-shell not running" "rice restart"; fi
 
-    if agent_running com.mac-rice.wallpaper; then doctor_line wallpaper ok "обои (rice-wallpaper)"
-    else doctor_line wallpaper warn "rice-wallpaper не запущен" "rice restart"; fi
+    if agent_running com.mac-rice.wallpaper; then doctor_line wallpaper ok "wallpapers (rice-wallpaper)"
+    else doctor_line wallpaper warn "rice-wallpaper not running" "rice restart"; fi
 
     if sa_loaded && sa_sip_ok && sa_bootarg_ok && ! sa_sudoers_ok; then
-        doctor_line mode warn "yabai обновился — запись sudoers устарела" "rice sa (спросит пароль), иначе после перезагрузки полный режим отвалится"
+        doctor_line mode warn "yabai was updated; the sudoers entry is stale" "run rice sa (asks for password), otherwise full mode breaks after reboot"
     elif sa_loaded && sa_sip_ok && sa_bootarg_ok; then
-        doctor_line mode ok "полный режим (scripting addition)"
+        doctor_line mode ok "full mode (scripting addition)"
     elif [ "$(state_get sa)" = pending ]; then
-        doctor_line mode warn "полный режим: не закончен" "rice sa"
+        doctor_line mode warn "full mode: not finished" "rice sa"
     else
-        doctor_line mode off "базовый режим (полный: rice sa)"
+        doctor_line mode off "basic mode (full: rice sa)"
     fi
 }

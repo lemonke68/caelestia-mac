@@ -19,10 +19,10 @@ enum SetupAction: Equatable {
 
     var title: String {
         switch self {
-        case .settings: return "Открыть настройки"
-        case .askAccessibility, .askLocation, .askBluetooth: return "Разрешить"
-        case .run: return "Запустить"
-        case .terminal: return "Включить…"
+        case .settings: return "Open Settings"
+        case .askAccessibility, .askLocation, .askBluetooth: return "Allow"
+        case .run: return "Start"
+        case .terminal: return "Enable…"
         }
     }
 }
@@ -71,8 +71,8 @@ final class SetupModel: ObservableObject {
             }
             DispatchQueue.main.async {
                 let mode = rows.first { $0.id == "mode" }.map {
-                    $0.status == .off ? SetupRow(id: $0.id, status: .off, title: "Базовый режим",
-                                                 hint: "полный режим — кнопкой справа", action: $0.action) : $0
+                    $0.status == .off ? SetupRow(id: $0.id, status: .off, title: "Basic mode",
+                                                 hint: "full mode: button on the right", action: $0.action) : $0
                 }
                 let services = rows.filter { $0.id != "mode" }
                 let own = self.ownRows()
@@ -90,7 +90,7 @@ final class SetupModel: ObservableObject {
     private static func action(for id: String, hint: String) -> SetupAction? {
         switch id {
         case "yabai", "skhd":
-            if hint.contains("Универсальный доступ") { return .settings(accessibilityPane) }
+            if hint.contains("Accessibility") { return .settings(accessibilityPane) }
             return .run("/bin/sh", ["-c", "PATH=/opt/homebrew/bin:/usr/local/bin:$PATH; \(id) --restart-service || \(id) --start-service"])
         case "sketchybar", "borders", "shell", "wallpaper":
             return .run(binDir.appendingPathComponent("rice").path, ["restart"])
@@ -105,29 +105,29 @@ final class SetupModel: ObservableObject {
         var rows: [SetupRow] = []
         let ax = AXIsProcessTrusted()
         rows.append(SetupRow(id: "ax", status: ax ? .ok : .fail,
-                             title: ax ? "Универсальный доступ" : "Универсальный доступ: выключен",
-                             hint: "медиаклавиши, трей, запись экрана",
+                             title: ax ? "Accessibility" : "Accessibility: off",
+                             hint: "media keys, tray, screen recording",
                              action: ax ? nil : .askAccessibility))
 
         let location = LocationService.shared.authorization
         let locStatus: SetupStatus = location == .authorized || location == .authorizedAlways ? .ok
             : location == .notDetermined ? .warn : .fail
         rows.append(SetupRow(id: "location", status: locStatus,
-                             title: locStatus == .ok ? "Геолокация" : "Геолокация: нет",
-                             hint: "погода по городу и названия Wi-Fi сетей",
+                             title: locStatus == .ok ? "Location Services" : "Location Services: off",
+                             hint: "weather by city and Wi-Fi network names",
                              action: locStatus == .ok ? nil : location == .notDetermined ? .askLocation
                                 : .settings("Privacy_LocationServices")))
 
         let bt = CBManager.authorization
         let btStatus: SetupStatus = bt == .allowedAlways ? .ok : bt == .notDetermined ? .warn : .fail
         rows.append(SetupRow(id: "bluetooth", status: btStatus,
-                             title: btStatus == .ok ? "Bluetooth" : "Bluetooth: нет",
-                             hint: "устройства в панели Bluetooth",
+                             title: btStatus == .ok ? "Bluetooth" : "Bluetooth: off",
+                             hint: "devices in the Bluetooth panel",
                              action: btStatus == .ok ? nil : bt == .notDetermined ? .askBluetooth
                                 : .settings("Privacy_Bluetooth")))
 
-        rows.append(SetupRow(id: "audio", status: .off, title: "Запись системного звука",
-                             hint: "визуализатор; macOS спросит при первом открытии вкладки Media", action: nil))
+        rows.append(SetupRow(id: "audio", status: .off, title: "System audio recording",
+                             hint: "visualizer; macOS asks the first time the Media tab opens", action: nil))
         return rows
     }
 
@@ -170,27 +170,27 @@ struct SetupView: View {
             HStack(spacing: T.m) {
                 MIcon(name: "tune", size: 28, color: theme["primary"])
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("Настройка mac-rice").font(.body(T.fontLarge, .semibold)).foregroundStyle(theme["onSurface"])
-                    Text("macOS даёт выдавать эти разрешения только тебе — по кнопке справа.")
+                    Text("mac-rice Setup").font(.body(T.fontLarge, .semibold)).foregroundStyle(theme["onSurface"])
+                    Text("Only you can grant these permissions in macOS: use the button on the right.")
                         .font(.body(T.fontSmaller)).foregroundStyle(theme["onSurfaceVariant"])
                 }
             }
 
             // Working services fold into one line: the window has to fit a 13" screen
             if model.services.allSatisfy({ $0.status == .ok }) && !model.services.isEmpty {
-                section("Службы", [SetupRow(id: "services", status: .ok, title: "Все службы работают",
-                                            hint: "yabai, skhd, SketchyBar, borders, rice-shell, обои", action: nil)])
+                section("Services", [SetupRow(id: "services", status: .ok, title: "All services running",
+                                            hint: "yabai, skhd, SketchyBar, borders, rice-shell, wallpapers", action: nil)])
             } else {
-                section("Службы", model.services)
+                section("Services", model.services)
             }
             section("rice-shell", model.own)
 
             if let mode = model.mode {
                 VStack(alignment: .leading, spacing: T.s) {
-                    Text("Режим").font(.body(T.fontNormal, .semibold)).foregroundStyle(theme["primary"])
+                    Text("Mode").font(.body(T.fontNormal, .semibold)).foregroundStyle(theme["primary"])
                     SetupRowView(row: mode, perform: model.perform)
                     if mode.status != .ok {
-                        Text("Базовый режим: рабочие столы создаются в Mission Control (F3 → «+»), переключение — alt + цифра. Полный режим добавляет создание столов на лету, перенос окон между ними и прозрачный меню-бар, но требует один раз зайти в Recovery и частично выключить SIP.")
+                        Text("Basic mode: spaces are created in Mission Control (F3 → \"+\"), switched with alt + number. Full mode adds on-the-fly space creation, moving windows between spaces and a transparent menu bar, but requires a one-time boot into Recovery to partially disable SIP.")
                             .font(.body(T.fontSmall)).foregroundStyle(theme["onSurfaceVariant"])
                             .fixedSize(horizontal: false, vertical: true)
                     }
@@ -198,10 +198,10 @@ struct SetupView: View {
             }
 
             HStack {
-                Text(model.allGreen ? "Всё на месте." : "Красные строки ещё ждут тебя.")
+                Text(model.allGreen ? "All set." : "Red rows still need attention.")
                     .font(.body(T.fontSmaller)).foregroundStyle(theme["onSurfaceVariant"])
                 Spacer()
-                Button("Готово", action: onClose).keyboardShortcut(.defaultAction)
+                Button("Done", action: onClose).keyboardShortcut(.defaultAction)
                     .buttonStyle(SetupButtonStyle(filled: true))
             }
         }

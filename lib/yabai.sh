@@ -26,31 +26,31 @@ yabai_build_fork() {
     local src
     src="$(yabai_fork_dir)"
     if [ ! -d "$src/.git" ]; then
-        info "клонирую форк в ${src/#$HOME/~}"
-        git clone -q "$RICE_YABAI_FORK_URL" "$src" || die "не получилось скачать форк yabai"
+        info "cloning the fork into ${src/#$HOME/~}"
+        git clone -q "$RICE_YABAI_FORK_URL" "$src" || die "failed to download the yabai fork"
     fi
     state_set yabai_src "$src"
 
     if [ -n "$(git -C "$src" status --porcelain --untracked-files=no)" ]; then
-        warn "в ${src/#$HOME/~} есть незакоммиченные изменения — собираю как есть, без обновления"
+        warn "${src/#$HOME/~} has uncommitted changes; building as is, without updating"
     else
         # mac-rice branch = fork's latest + our patches; a local branch of the user's own stays untouched
-        git -C "$src" fetch -q origin || warn "нет сети — собираю последнюю скачанную версию"
+        git -C "$src" fetch -q origin || warn "no network; building the last downloaded version"
         git -C "$src" checkout -q -B mac-rice origin/HEAD
         local p
         for p in "$RICE_ROOT"/patches/yabai/*.patch; do
             [ -f "$p" ] || continue
             if ! git -C "$src" -c user.name=mac-rice -c user.email=mac-rice@localhost am -q --3way "$p" >/dev/null 2>&1; then
                 git -C "$src" am --abort >/dev/null 2>&1
-                warn "патч $(basename "$p") больше не накладывается — пропускаю"
+                warn "patch $(basename "$p") no longer applies; skipping"
             fi
         done
     fi
 
-    info "собираю yabai (около минуты)"
+    info "building yabai (about a minute)"
     mkdir -p "$RICE_STATE_DIR"
     make -C "$src" install >/dev/null 2>"$RICE_STATE_DIR/yabai-build.log" \
-        || die "сборка yabai упала, лог: ${RICE_STATE_DIR/#$HOME/~}/yabai-build.log"
+        || die "yabai build failed, log: ${RICE_STATE_DIR/#$HOME/~}/yabai-build.log"
 }
 
 # Replace the yabai on PATH with the fork build, signed so Accessibility stays granted.
@@ -68,14 +68,14 @@ yabai_install() {
     source="$(yabai_source)"
     state_set yabai_source "$source"
     if command -v yabai >/dev/null 2>&1 && [ "${1:-}" != --force ]; then
-        ok "yabai уже установлен ($(yabai --version))"
+        ok "yabai already installed ($(yabai --version))"
     elif [ "$source" = brew ]; then
         brew install asmvik/formulae/yabai
-        ok "yabai $(yabai --version) из Homebrew"
+        ok "yabai $(yabai --version) from Homebrew"
     else
         yabai_build_fork
         yabai_install_fork
-        ok "yabai $(yabai --version) собран из форка (macOS $(macos_version))"
+        ok "yabai $(yabai --version) built from the fork (macOS $(macos_version))"
     fi
     # A new binary has a new hash: the passwordless --load-sa entry has to follow it
     if [ -f /private/etc/sudoers.d/yabai ]; then sa_write_sudoers; fi
@@ -94,5 +94,5 @@ yabai_update() {
 
 service_start() {   # service_start yabai|skhd
     if "$1" --restart-service >/dev/null 2>&1; then return; fi
-    "$1" --start-service >/dev/null 2>&1 || warn "$1 не запустился"
+    "$1" --start-service >/dev/null 2>&1 || warn "$1 failed to start"
 }

@@ -134,7 +134,7 @@ def set_wallpaper(meta: dict) -> None:
 def apply(name: str) -> None:
     theme_dir = THEMES / name
     if not theme_dir.is_dir():
-        sys.exit(f"нет темы {name!r}; см. theme-switch list")
+        sys.exit(f"no theme {name!r}; see theme-switch list")
 
     meta = json.loads((theme_dir / "theme.json").read_text())
     mode = meta["mode"]
@@ -153,13 +153,13 @@ def apply(name: str) -> None:
     set_wallpaper(meta)
     run(str(ROOT / "bin/rice-shell"), "theme-changed")
 
-    print(f"тема {name} ({mode}) применена")
+    print(f"theme {name} ({mode}) applied")
 
 
 def main() -> None:
     args = sys.argv[1:]
     if not args:
-        print(STATE.read_text() if STATE.exists() else "тема не выбрана")
+        print(STATE.read_text() if STATE.exists() else "no theme selected")
     elif args[0] == "list":
         for d in sorted(THEMES.iterdir()):
             if (d / "theme.json").exists():
