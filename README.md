@@ -1,107 +1,123 @@
 # caelestia-mac
 
-Райс macOS в стиле [caelestia](https://github.com/caelestia-dots/shell) (Hyprland + Quickshell) с Arch:
-тайлинг окон, вертикальный бар и рамка вокруг рабочего стола, дашборд, который выезжает из выреза,
-лаунчер, панель сессии, OSD громкости и яркости, анимированные обои, темы Material из одной схемы.
+A macOS rice modeled after [caelestia](https://github.com/caelestia-dots/shell) (Hyprland + Quickshell on Arch):
+tiling windows, a vertical bar and a frame around the desktop, a dashboard that slides out of the notch,
+an app launcher, a session menu, volume and brightness OSDs, animated wallpapers, and Material themes
+generated from a single color scheme.
 
-Внутри: [yabai](https://github.com/asmvik/yabai) (тайлинг), [skhd](https://github.com/asmvik/skhd)
-(горячие клавиши), [SketchyBar](https://github.com/FelixKratz/SketchyBar) (верхний бар),
-[JankyBorders](https://github.com/FelixKratz/JankyBorders) (рамки окон), kitty и **rice-shell** —
-свой «quickshell» на Swift/SwiftUI.
+Built on [yabai](https://github.com/asmvik/yabai) (tiling), [skhd](https://github.com/asmvik/skhd)
+(hotkeys), [SketchyBar](https://github.com/FelixKratz/SketchyBar) (top bar),
+[JankyBorders](https://github.com/FelixKratz/JankyBorders) (window borders), kitty, and **rice-shell**,
+a custom Quickshell-like layer written in Swift/SwiftUI.
 
-## Установка
+## Requirements
 
-Открой «Терминал» (⌘ + Пробел → «Терминал») и вставь:
+- macOS 14.4 or later
+- Apple Silicon or Intel
+
+Tested on a 14" MacBook Pro (M1 Pro) running macOS 27. The bar and frame adapt to the display:
+with or without a notch, built-in or external. They are drawn on the display that holds the menu bar.
+
+## Installation
+
+Open Terminal and run:
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/lemonke68/caelestia-mac/main/install.sh | bash
 ```
 
-Установщик сам поставит Homebrew, пакеты и шрифты, соберёт rice-shell и подключит конфиги.
-Его можно запускать повторно: каждый шаг сначала проверяет, что уже сделано.
+The installer sets up Homebrew, packages and fonts, builds rice-shell, and links the configs.
+The repository is cloned to `~/.local/share/caelestia-mac`. The script is safe to re-run: each step
+checks what is already in place.
 
-От тебя понадобится:
+Installer flags (when running `./install.sh` from a checkout):
 
-1. **Пароль от Mac** — Homebrew и пара системных шагов попросят его в терминале.
-2. **Разрешения** — macOS не даёт скриптам их выдавать. В конце откроется окно «Настройка mac-rice»:
-   у каждой красной строки есть кнопка, которая открывает нужный раздел Системных настроек.
-   Включи там переключатель — строка станет зелёной.
-3. **По желанию — полный режим** (ниже).
+```
+--yes       accept the default answer to every prompt
+--full      continue into full mode without asking
+--no-apps   skip the optional apps (Zen, Zed, Telegram, Spotify)
+```
 
-Требования: macOS 14.4 или новее, Apple Silicon или Intel. Проверено на MacBook Pro 14" M1 Pro,
-macOS 27. Бар и рамка подстраиваются под экран: с вырезом и без, встроенный или внешний монитор
-(рисуются на том, где меню-бар).
+During installation you will need to:
 
-### Базовый и полный режим
+1. **Enter your macOS password** when Homebrew and a few system steps ask for it.
+2. **Grant permissions.** macOS does not allow scripts to grant them, so a setup window opens at the end.
+   Each red row has a button that opens the relevant System Settings pane; enable the toggle there
+   and the row turns green.
+3. **Optionally enable full mode** (see below).
 
-| | Базовый | Полный |
+### Basic and full mode
+
+| | Basic | Full |
 |---|---|---|
-| Тайлинг, фокус, ресайз, бары, дашборд, темы, обои | ✓ | ✓ |
-| Переключение рабочих столов (alt + 1…9) | через ctrl + 1…9 macOS, столы создаются вручную в Mission Control | мгновенно, столы создаются сами |
-| Перенос окна на другой стол (alt + shift + 1…0) | — | ✓ |
-| Прозрачность окон и системного меню-бара | — | ✓ |
-| Что нужно | ничего | один раз зайти в Recovery и частично выключить SIP |
+| Tiling, focus, resizing, bars, dashboard, themes, wallpapers | ✓ | ✓ |
+| Switching spaces (alt + 1…9) | via macOS ctrl + 1…9; spaces are created manually in Mission Control | instant; spaces are created automatically |
+| Moving a window to another space (alt + shift + 1…0) | — | ✓ |
+| Window and system menu bar transparency | — | ✓ |
+| Requirements | none | boot into Recovery once and partially disable SIP |
 
-Полный режим включается командой `rice sa` или кнопкой в окне настройки. Установщик проведёт по шагам
-и после перезагрузки сам продолжит. Пошагово, удобно открыть на телефоне: [docs/full-mode.md](docs/full-mode.md).
+Enable full mode with `rice sa` or from the setup window. The installer walks through the steps and
+resumes automatically after the reboot. A step-by-step guide (handy to keep open on a phone):
+[docs/full-mode.md](docs/full-mode.md).
 
-Чем платишь за полный режим: часть защиты macOS (SIP) выключена, на Apple Silicon перестают запускаться
-iPhone/iPad-приложения, а после крупных обновлений macOS yabai может временно сломаться до фикса.
+Trade-offs of full mode: part of macOS's System Integrity Protection is disabled, iPhone/iPad apps
+stop launching on Apple Silicon, and major macOS updates may temporarily break yabai until it is patched.
 
-## Команды
+## Commands
 
 ```
-rice doctor      что работает, что нет
-rice setup       окно настройки (разрешения, режим)
-rice update      обновить и пересобрать
-rice restart     перезапустить всё
-rice theme       темы: rice theme list, rice theme <имя>
-rice sa          полный режим
-rice uninstall   удалить и вернуть всё как было
+rice doctor      show what works and what doesn't
+rice setup       open the setup window (permissions, mode)
+rice update      update and rebuild
+rice restart     restart everything
+rice theme       themes: rice theme list, rice theme <name>
+rice sa          enable full mode
+rice uninstall   remove everything and restore the previous state
 ```
 
-## Горячие клавиши
+## Keybindings
 
-Модификатор — `alt` (⌥). Главное:
+The modifier is `alt` (⌥). Essentials:
 
-| | |
+| Keys | Action |
 |---|---|
-| alt + Enter | терминал |
-| alt + Space | лаунчер (приложения, калькулятор, `>` команды) |
-| alt + O | дашборд (или наведи мышь на вырез) |
-| alt + 1…0 / alt + shift + 1…0 | рабочий стол / перенести окно туда |
-| alt + H/J/K/L или стрелки | фокус; с shift — переместить окно |
-| alt + Q / alt + F / alt + V | закрыть / на весь экран / плавающее |
-| alt + I / alt + shift + I | выбор обоев / следующие обои |
-| alt + ` | выпадающий терминал |
-| ctrl + alt + Delete | выключение, сон, перезагрузка |
+| alt + Enter | terminal |
+| alt + Space | launcher (apps, calculator, `>` commands) |
+| alt + O | dashboard (or hover the notch) |
+| alt + 1…0 / alt + shift + 1…0 | switch to space / move window there |
+| alt + H/J/K/L or arrows | move focus; with shift, move the window |
+| alt + Q / alt + F / alt + V | close / fullscreen / toggle floating |
+| alt + I / alt + shift + I | wallpaper picker / next wallpaper |
+| alt + ` | drop-down terminal |
+| ctrl + alt + Delete | shut down, sleep, restart |
 
-Все бинды и подробности устройства: [docs/REFERENCE.md](docs/REFERENCE.md).
+Full keybinding list and internals: [docs/REFERENCE.md](docs/REFERENCE.md).
 
-## Что меняется в системе
+## System changes
 
-- Конфиги в `~/.config` становятся ссылками на эту папку. Прежние файлы сохраняются
-  в `~/.local/state/mac-rice/backup/` и возвращаются при удалении.
-- Команды в `~/.local/bin`, строка `PATH` в `~/.zprofile` (с пометкой `# mac-rice`).
-- Сертификат подписи `mac-rice-cert` в отдельном keychain: из-за него разрешения не слетают
-  после пересборки. Связку «Вход» установщик не трогает.
-- Настройки: рабочие столы не переставляются сами, меню-бар не прячется, ctrl + 1…9 переключает
-  столы (только в базовом режиме).
-- Полный режим: SIP частично выключен, boot-arg `-arm64e_preview_abi`, запись
-  `/etc/sudoers.d/yabai` для `yabai --load-sa`.
+- Configs in `~/.config` are replaced with symlinks into the repository. Existing files are backed up
+  to `~/.local/state/mac-rice/backup/` and restored on uninstall.
+- Commands are installed to `~/.local/bin`, and a `PATH` line (marked `# mac-rice`) is added to `~/.zprofile`.
+- A `mac-rice-cert` signing certificate is stored in a separate keychain so permissions survive rebuilds.
+  The login keychain is not touched.
+- System settings: spaces are not rearranged automatically, the menu bar is not hidden, and ctrl + 1…9
+  switches spaces (basic mode only).
+- Full mode: SIP partially disabled, the `-arm64e_preview_abi` boot-arg, and a `/etc/sudoers.d/yabai`
+  entry for `yabai --load-sa`.
 
-`rice uninstall` всё это откатывает. SIP включается обратно только из Recovery, команды он покажет.
+`rice uninstall` reverts all of the above. SIP can only be re-enabled from Recovery; the uninstaller
+prints the commands.
 
-## Устройство репозитория
+## Repository layout
 
 ```
-install.sh, uninstall.sh   установка и удаление
-lib/                       шаги установщика: yabai, полный режим, doctor, подпись
-bin/                       rice, theme-switch, wallpaper-next (+ собранные rice-shell, обои)
-config/                    то, что становится ~/.config/… (yabai, skhd, sketchybar, kitty)
-shell/                     rice-shell (Swift): рамка, бар, дашборд, лаунчер, OSD, окно настройки
-native/                    обои: демон rice-wallpaper и пикер rice-picker
-themes/                    схемы caelestia (scheme.txt) + theme.json
-assets/                    обои и гифки тем
-patches/yabai/             патчи поверх форка yabai для macOS 27
+install.sh, uninstall.sh   install and uninstall
+lib/                       installer steps: yabai, full mode, doctor, signing
+bin/                       rice, theme-switch, wallpaper-next (+ built rice-shell and wallpaper binaries)
+config/                    files linked into ~/.config/… (yabai, skhd, sketchybar, kitty)
+shell/                     rice-shell (Swift): frame, bar, dashboard, launcher, OSD, setup window
+native/                    wallpapers: rice-wallpaper daemon and rice-picker
+themes/                    caelestia schemes (scheme.txt) + theme.json
+assets/                    wallpapers and theme GIFs
+patches/yabai/             patches on top of the yabai fork for macOS 27
 ```
